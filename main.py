@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 from database import db, create_document, get_documents
-from schemas import Product, Article
+from schemas import Product, Article, Lead
 
 app = FastAPI(title="Canada CRS Waterworks API")
 
@@ -52,7 +52,7 @@ def test_database():
     response["database_name"] = "✅ Set" if os.getenv("DATABASE_NAME") else "❌ Not Set"
     return response
 
-# Simple product list create endpoint
+# Products
 @app.post("/api/products", response_model=dict)
 def create_product(product: Product):
     try:
@@ -92,6 +92,15 @@ def list_articles(topic: Optional[str] = None, limit: int = 50):
             if "_id" in d:
                 d["id"] = str(d.pop("_id"))
         return {"items": docs}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Leads (quote requests)
+@app.post("/api/leads", response_model=dict)
+def create_lead(lead: Lead):
+    try:
+        inserted_id = create_document("lead", lead)
+        return {"id": inserted_id, "status": "received"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
